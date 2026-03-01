@@ -52,7 +52,7 @@ object WebViewSecurity {
         }
 
         val commonAuth = settings.getCommonAuthDomains()
-        if (commonAuth.any { host == it || host.endsWith(".$it") }) {
+        if (commonAuth.any { host == it || host.endsWith(".$it") || host.startsWith("accounts.google") }) {
             return true
         }
 
