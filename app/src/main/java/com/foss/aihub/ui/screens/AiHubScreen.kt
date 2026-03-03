@@ -266,6 +266,58 @@ fun AiHubApp(activity: MainActivity) {
                         }
                     },
                     onSettingsClick = { showSettingsScreen = true },
+                    onClearSiteData = {
+                        val serviceId = selectedService.id
+                        val webView = webViews[serviceId]
+                        if (webView != null) {
+                            val currentUrl = webView.url ?: selectedService.url
+                            val domain = try {
+                                android.net.Uri.parse(currentUrl).host ?: ""
+                            } catch (_: Exception) { "" }
+
+                            // Clear cookies for this domain only
+                            val cookieManager = android.webkit.CookieManager.getInstance()
+                            val cookies = cookieManager.getCookie(currentUrl)
+                            if (cookies != null) {
+                                val cookieNames = cookies.split(";").mapNotNull { cookie ->
+                                    cookie.trim().split("=").firstOrNull()?.trim()
+                                }
+                                for (name in cookieNames) {
+                                    cookieManager.setCookie(currentUrl, "$name=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/")
+                                    cookieManager.setCookie(currentUrl, "$name=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=$domain")
+                                }
+                                cookieManager.flush()
+                            }
+
+                            // Clear localStorage and sessionStorage via JavaScript
+                            webView.evaluateJavascript(
+                                "try { localStorage.clear(); sessionStorage.clear(); } catch(e) {}",
+                                null
+                            )
+
+                            // Clear WebView cache for this specific view and reload
+                            webView.clearCache(true)
+                            webView.clearFormData()
+                            webView.clearHistory()
+
+                            // Reload the tab
+                            updateServiceState(serviceId) { state ->
+                                state.copy(
+                                    webViewState = WebViewState.LOADING,
+                                    isLoading = true,
+                                    error = null,
+                                    progress = 0
+                                )
+                            }
+                            webView.loadUrl(selectedService.url)
+
+                            Toast.makeText(
+                                context,
+                                "Site data cleared for ${selectedService.name}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
                     loadedServiceIds = webViews.keys,
                     allServices = aiServices,
                     onServiceSelected = { service ->

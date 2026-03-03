@@ -30,8 +30,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.BottomSheetDefaults
@@ -72,6 +75,7 @@ fun AiHubAppBar(
     selectedService: AiService,
     onMenuClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onClearSiteData: () -> Unit,
     loadedServiceIds: Set<String>,
     allServices: List<AiService>,
     onServiceSelected: (AiService) -> Unit
@@ -80,6 +84,7 @@ fun AiHubAppBar(
         skipPartiallyExpanded = false, confirmValueChange = { true })
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
+    var showClearDataDialog by remember { mutableStateOf(false) }
 
     TopAppBar(
         title = {
@@ -139,6 +144,18 @@ fun AiHubAppBar(
                     modifier = Modifier.size(24.dp)
                 )
             }
+        }
+
+        IconButton(
+            onClick = { showClearDataDialog = true }, modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+        ) {
+            Icon(
+                Icons.Rounded.DeleteSweep,
+                contentDescription = "Clear Site Data",
+                modifier = Modifier.size(24.dp)
+            )
         }
 
         IconButton(
@@ -259,6 +276,45 @@ fun AiHubAppBar(
                 }
             }
         }
+    }
+
+    if (showClearDataDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDataDialog = false },
+            title = {
+                Text(
+                    text = "Clear Site Data",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            },
+            text = {
+                Text(
+                    text = "This will clear cookies, local storage, and session data only for ${selectedService.name}. You may be logged out of this site.\n\nOther services will not be affected.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showClearDataDialog = false
+                    onClearSiteData()
+                }) {
+                    Text(
+                        text = "Clear",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDataDialog = false }) {
+                    Text(text = "Cancel")
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

@@ -1,8 +1,14 @@
 package com.foss.aihub.ui.components
 
 import android.content.Intent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,17 +32,27 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,10 +92,27 @@ fun DrawerContent(
     val colorScheme = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
     var isUpdatingDomainRules by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showFilters by remember { mutableStateOf(false) }
+    var selectedCategories by remember { mutableStateOf(emptySet<String>()) }
 
     val orderedEnabledServices = remember(enabledServices, serviceOrder, aiServices.toList()) {
         serviceOrder.filter { it in enabledServices }
             .mapNotNull { id -> aiServices.find { it.id == id } }
+    }
+
+    val availableCategories by derivedStateOf {
+        orderedEnabledServices.map { it.category }.distinct().sorted()
+    }
+
+    val filteredServices by derivedStateOf {
+        orderedEnabledServices.filter { service ->
+            val matchesSearch = searchQuery.isBlank() ||
+                    service.name.contains(searchQuery, ignoreCase = true)
+            val matchesCategory = selectedCategories.isEmpty() ||
+                    service.category in selectedCategories
+            matchesSearch && matchesCategory
+        }
     }
 
     Surface(
@@ -158,12 +191,135 @@ fun DrawerContent(
                     }
                 }
 
-                Text(
-                    text = "AI Assistants",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 24.dp, top = 16.dp, bottom = 12.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "AI Assistants",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = colorScheme.onSurface
+                    )
+                    IconButton(
+                        onClick = {
+                            showFilters = !showFilters
+                            if (!showFilters) {
+                                selectedCategories = emptySet()
+                                searchQuery = ""
+                            }
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (showFilters) Icons.Rounded.Close else Icons.Rounded.FilterList,
+                            contentDescription = "Filter",
+                            tint = if (showFilters || selectedCategories.isNotEmpty())
+                                colorScheme.primary else colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                AnimatedVisibility(
+                    visible = showFilters,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = {
+                                Text(
+                                    text = "Search services...",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.Search,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = colorScheme.onSurfaceVariant
+                                )
+                            },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = { searchQuery = "" },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Close,
+                                            contentDescription = "Clear",
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = colorScheme.primary,
+                                unfocusedBorderColor = colorScheme.outlineVariant,
+                                focusedContainerColor = colorScheme.surfaceContainerLow,
+                                unfocusedContainerColor = colorScheme.surfaceContainerLow
+                            ),
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            availableCategories.forEach { category ->
+                                val isSelected = category in selectedCategories
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = {
+                                        selectedCategories = if (isSelected) {
+                                            selectedCategories - category
+                                        } else {
+                                            selectedCategories + category
+                                        }
+                                    },
+                                    label = {
+                                        Text(
+                                            text = category,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                        )
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = colorScheme.primaryContainer,
+                                        selectedLabelColor = colorScheme.onPrimaryContainer
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        borderColor = colorScheme.outlineVariant,
+                                        selectedBorderColor = colorScheme.primary.copy(alpha = 0.3f),
+                                        enabled = true,
+                                        selected = isSelected
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
 
                 LazyColumn(
                     modifier = Modifier
@@ -173,7 +329,7 @@ fun DrawerContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 20.dp)
                 ) {
-                    items(orderedEnabledServices) { service ->
+                    items(filteredServices, key = { it.id }) { service ->
                         val state = webViewStates[service.id] ?: WebViewState.IDLE
                         Md3ServiceCard(
                             service = service,
