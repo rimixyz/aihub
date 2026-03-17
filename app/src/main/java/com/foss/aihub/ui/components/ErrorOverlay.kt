@@ -1,5 +1,6 @@
 package com.foss.aihub.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,32 +11,32 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.WifiOff
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.foss.aihub.R
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ErrorOverlay(
     modifier: Modifier = Modifier,
@@ -47,190 +48,167 @@ fun ErrorOverlay(
     onRetry: () -> Unit
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLowest, modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surfaceContainerLowest
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+            Box(
+                modifier = Modifier
+                    .size(88.dp)
+                    .clip(CircleShape)
+                    .background(
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.38f),
+                        shape = CircleShape
+                    ), contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = errorType.icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(48.dp)
+                )
+            }
 
-            ElevatedCard(
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                text = stringResource(errorType.titleRes),
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = errorType.getDescription(
+                    serviceName = serviceName, errorCode = errorCode
                 ),
-                shape = RoundedCornerShape(20.dp),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.3f
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            FilledTonalButton(
+                onClick = onRetry,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .height(56.dp),
+                shape = RoundedCornerShape(28.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = accentColor, contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp)
+                Icon(
+                    imageVector = Icons.Outlined.Refresh,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = stringResource(R.string.action_retry),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Spacer(modifier = Modifier.weight(1f))
+            }
+
+            if (!errorMessage.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                OutlinedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    border = androidx.compose.material3.CardDefaults.outlinedCardBorder()
                 ) {
-
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(60.dp)
-                            .padding(bottom = 16.dp)
-                    ) {
-                        Icon(
-                            imageVector = errorType.icon,
-                            contentDescription = null,
-                            tint = accentColor,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
-
-
-                    Text(
-                        text = errorType.title,
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-
-                    Text(
-                        text = errorType.getDescription(serviceName, errorCode, errorMessage),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 24.dp)
-                    )
-
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.padding(20.dp)
                     ) {
+                        Text(
+                            text = stringResource(R.string.label_details),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
 
-                        Button(
-                            onClick = onRetry,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = accentColor
-                            ),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Refresh,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Retry", style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            )
-                        }
-                    }
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    if (errorMessage != null && errorMessage.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                            ), shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                            ) {
-                                Text(
-                                    text = "Details",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Medium
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(bottom = 4.dp)
-                                )
-                                Text(
-                                    text = errorMessage.take(100) + if (errorMessage.length > 100) "..." else "",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                                )
-                            }
-                        }
+                        Text(
+                            text = errorMessage,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.4f
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
             Text(
-                text = "Service: $serviceName • Code: $errorCode",
-                style = MaterialTheme.typography.labelSmall,
+                text = stringResource(
+                    R.string.error_service_info_format, serviceName, errorCode
+                ),
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier.padding(bottom = 8.dp)
+                textAlign = TextAlign.Center
             )
         }
     }
 }
 
 enum class ErrorType(
-    val icon: ImageVector,
-    val title: String,
-    val description: (String, Int, String?) -> String
+    val icon: ImageVector, val titleRes: Int
 ) {
     NETWORK_ERROR(
-        icon = Icons.Outlined.WifiOff,
-        title = "No Connection",
-        description = { serviceName, _, _ ->
-            "Can't reach $serviceName. Check your internet connection."
-        }
+        icon = Icons.Outlined.WifiOff, titleRes = R.string.error_title_no_connection
     ),
     HTTP_ERROR(
-        icon = Icons.Outlined.ErrorOutline,
-        title = "Server Error",
-        description = { serviceName, errorCode, _ ->
-            "$serviceName returned error $errorCode"
-        }
+        icon = Icons.Outlined.ErrorOutline, titleRes = R.string.error_title_server_error
     ),
     SSL_ERROR(
-        icon = Icons.Outlined.ErrorOutline,
-        title = "Security Issue",
-        description = { serviceName, _, _ ->
-            "Can't securely connect to $serviceName"
-        }
+        icon = Icons.Outlined.ErrorOutline, titleRes = R.string.error_title_security_issue
     );
 
-    fun getDescription(serviceName: String, errorCode: Int, errorMessage: String?): String =
-        description(serviceName, errorCode, errorMessage)
+    @Composable
+    fun getDescription(
+        serviceName: String, errorCode: Int
+    ): String = when (this) {
+        NETWORK_ERROR -> stringResource(
+            R.string.error_desc_no_connection, serviceName
+        )
+
+        HTTP_ERROR -> stringResource(
+            R.string.error_desc_http_error, serviceName, errorCode
+        )
+
+        SSL_ERROR -> stringResource(
+            R.string.error_desc_ssl_issue, serviceName
+        )
+    }
 
     companion object {
-        fun shouldShowOverlay(errorCode: Int): Boolean {
-            return when (errorCode) {
-                in 500..599 -> false // Server error
-                -2, -4, -6, -7, -8, -10, -11 -> true  // includes net::ERR_FAILED variants
-                -3 -> true  // SSL error
-                in 400..499 -> true  // Client errors
-                else -> false
-            }
+        fun shouldShowOverlay(errorCode: Int): Boolean = when (errorCode) {
+            in 500..599 -> false
+            -2, -4, -6, -7, -8, -10, -11 -> true
+            -3 -> true
+            in 400..499 -> true
+            else -> false
         }
 
-        fun fromErrorCode(errorCode: Int): ErrorType {
-            return when (errorCode) {
-                -2, -4, -6, -7, -8, -10, -11 -> NETWORK_ERROR
-                -3 -> SSL_ERROR
-                in 400..499 -> HTTP_ERROR
-                else -> NETWORK_ERROR  // fallback, but shouldShowOverlay will filter
-            }
+        fun fromErrorCode(errorCode: Int): ErrorType = when (errorCode) {
+            -2, -4, -6, -7, -8, -10, -11 -> NETWORK_ERROR
+            -3 -> SSL_ERROR
+            in 400..499 -> HTTP_ERROR
+            else -> NETWORK_ERROR
         }
     }
 }

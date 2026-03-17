@@ -4,26 +4,27 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarOutline
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,9 +32,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.foss.aihub.R
 import com.foss.aihub.models.AiService
 import com.foss.aihub.models.WebViewState
 
@@ -48,101 +51,62 @@ fun Md3ServiceCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val colorScheme = colorScheme
+    val colorScheme = MaterialTheme.colorScheme
 
-    Surface(
+    val starColor by animateColorAsState(
+        targetValue = if (isFavorite) Color(0xFFFFB300) else colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+        animationSpec = tween(durationMillis = 250),
+        label = "starColor"
+    )
+
+    Card(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 72.dp),
+            .heightIn(min = 80.dp),
         shape = MaterialTheme.shapes.medium,
-        color = when {
-            state == WebViewState.ERROR -> colorScheme.errorContainer.copy(alpha = 0.08f)
-            isSelected -> serviceColor.copy(alpha = 0.06f)
-            else -> colorScheme.surfaceContainerLow
-        },
-        border = when {
-            state == WebViewState.ERROR -> BorderStroke(
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                state == WebViewState.ERROR -> colorScheme.errorContainer.copy(alpha = 0.08f)
+                isSelected -> serviceColor.copy(alpha = 0.12f)
+                else -> colorScheme.surfaceContainerLow
+            }
+        ),
+        border = when (state) {
+            WebViewState.ERROR -> BorderStroke(
                 1.dp, colorScheme.error.copy(alpha = 0.25f)
             )
-
-            isSelected -> BorderStroke(
-                1.5.dp, serviceColor.copy(alpha = 0.35f)
+            WebViewState.LOADING -> BorderStroke(
+                1.dp, colorScheme.secondary.copy(alpha = 0.25f)
             )
-
+            WebViewState.SUCCESS -> BorderStroke(
+                1.dp, serviceColor.copy(alpha = 0.25f)
+            )
             else -> null
-        },
-        tonalElevation = when {
-            isSelected -> 2.dp
-            else -> 1.dp
         }
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(0.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Column(
-                modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)
+                modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = service.name,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                        color = when {
-                            state == WebViewState.ERROR -> colorScheme.error
-                            isSelected -> serviceColor
-                            else -> colorScheme.onSurface
-                        },
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    when {
-                        isSelected -> {
-                            Icon(
-                                imageVector = Icons.Rounded.CheckCircle,
-                                contentDescription = "Selected",
-                                tint = serviceColor,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-
-                        state == WebViewState.ERROR -> {
-                            Icon(
-                                imageVector = Icons.Rounded.Error,
-                                contentDescription = "Error",
-                                tint = colorScheme.error,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-
-                        state == WebViewState.LOADING -> {
-                            CircularProgressIndicator(
-                                strokeWidth = 2.dp,
-                                color = colorScheme.secondary,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-
-                        state == WebViewState.SUCCESS -> {
-                            Icon(
-                                imageVector = Icons.Rounded.CheckCircle,
-                                contentDescription = "Ready",
-                                tint = serviceColor,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = service.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                    color = when {
+                        state == WebViewState.ERROR -> colorScheme.error
+                        isSelected -> serviceColor
+                        else -> colorScheme.onSurface
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -151,15 +115,15 @@ fun Md3ServiceCard(
                 ) {
                     Surface(
                         shape = MaterialTheme.shapes.small,
-                        color = serviceColor.copy(alpha = 0.10f),
+                        color = serviceColor.copy(alpha = 0.12f),
                         modifier = Modifier.wrapContentWidth()
                     ) {
                         Text(
                             text = service.category,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Medium,
                             color = serviceColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
 
@@ -172,9 +136,9 @@ fun Md3ServiceCard(
                     Text(
                         text = when {
                             state != WebViewState.IDLE -> when (state) {
-                                WebViewState.LOADING -> "Connecting..."
-                                WebViewState.ERROR -> "Connection failed"
-                                WebViewState.SUCCESS -> "Ready"
+                                WebViewState.LOADING -> stringResource(R.string.label_connecting)
+                                WebViewState.ERROR -> stringResource(R.string.label_connection_failed)
+                                WebViewState.SUCCESS -> stringResource(R.string.label_ready)
                                 else -> ""
                             }
 
@@ -198,24 +162,72 @@ fun Md3ServiceCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(4.dp))
-
-            val starColor by animateColorAsState(
-                targetValue = if (isFavorite) Color(0xFFFFB300) else colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                animationSpec = tween(durationMillis = 250),
-                label = "starColor"
-            )
-
-            IconButton(
-                onClick = onFavoriteToggle,
-                modifier = Modifier.size(32.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = if (isFavorite) Icons.Rounded.Star else Icons.Rounded.StarOutline,
-                    contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
-                    tint = starColor,
-                    modifier = Modifier.size(20.dp)
-                )
+                when {
+                    isSelected -> {
+                        Surface(
+                            shape = CircleShape,
+                            color = serviceColor.copy(alpha = 0.16f),
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.CheckCircle,
+                                    contentDescription = stringResource(R.string.label_selected),
+                                    tint = serviceColor,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    state == WebViewState.ERROR -> {
+                        Icon(
+                            imageVector = Icons.Rounded.Error,
+                            contentDescription = stringResource(R.string.label_error),
+                            tint = colorScheme.error,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    state == WebViewState.LOADING -> {
+                        CircularProgressIndicator(
+                            strokeWidth = 2.5.dp,
+                            color = colorScheme.secondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    state == WebViewState.SUCCESS -> {
+                        Icon(
+                            imageVector = Icons.Rounded.CheckCircle,
+                            contentDescription = stringResource(R.string.label_ready),
+                            tint = serviceColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                IconToggleButton(
+                    checked = isFavorite,
+                    onCheckedChange = { onFavoriteToggle() },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Rounded.Star else Icons.Rounded.StarOutline,
+                        contentDescription = if (isFavorite) stringResource(R.string.msg_remove_from_fav) else stringResource(
+                            R.string.msg_add_to_fav
+                        ),
+                        tint = starColor,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
         }
     }

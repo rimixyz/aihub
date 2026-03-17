@@ -1,5 +1,6 @@
 package com.foss.aihub.ui.components
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -65,6 +66,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,6 +78,7 @@ import com.foss.aihub.utils.aiServices
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
+@SuppressLint("UnrememberedMutableState", "LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DrawerContent(
@@ -109,10 +112,10 @@ fun DrawerContent(
 
     val filteredServices by derivedStateOf {
         orderedEnabledServices.filter { service ->
-            val matchesSearch = searchQuery.isBlank() ||
-                    service.name.contains(searchQuery, ignoreCase = true)
-            val matchesCategory = selectedCategories.isEmpty() ||
-                    service.category in selectedCategories
+            val matchesSearch =
+                searchQuery.isBlank() || service.name.contains(searchQuery, ignoreCase = true)
+            val matchesCategory =
+                selectedCategories.isEmpty() || service.category in selectedCategories
             matchesSearch && matchesCategory
         }
     }
@@ -161,28 +164,28 @@ fun DrawerContent(
                                 shape = CircleShape,
                                 color = colorScheme.primary,
                                 tonalElevation = 4.dp,
-                                modifier = Modifier.size(56.dp)
+                                modifier = Modifier.size(60.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         painter = painterResource(R.drawable.ic_launcher_foreground),
-                                        contentDescription = "AI Hub Logo",
+                                        contentDescription = stringResource(R.string.app_logo_description),
                                         tint = colorScheme.onPrimary,
-                                        modifier = Modifier.size(56.dp)
+                                        modifier = Modifier.size(60.dp)
                                     )
                                 }
                             }
 
                             Column {
                                 Text(
-                                    text = "AI Hub",
+                                    text = stringResource(R.string.app_name),
                                     style = MaterialTheme.typography.titleLarge.copy(
                                         fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp
                                     ),
                                     color = colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Your AI Companion Collection",
+                                    text = stringResource(R.string.app_tagline),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Medium
@@ -200,7 +203,7 @@ fun DrawerContent(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "AI Assistants",
+                        text = stringResource(R.string.title_ai_assistants),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = colorScheme.onSurface
                     )
@@ -211,14 +214,12 @@ fun DrawerContent(
                                 selectedCategories = emptySet()
                                 searchQuery = ""
                             }
-                        },
-                        modifier = Modifier.size(36.dp)
+                        }, modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = if (showFilters) Icons.Rounded.Close else Icons.Rounded.FilterList,
-                            contentDescription = "Filter",
-                            tint = if (showFilters || selectedCategories.isNotEmpty())
-                                colorScheme.primary else colorScheme.onSurfaceVariant,
+                            contentDescription = stringResource(R.string.action_filter),
+                            tint = if (showFilters || selectedCategories.isNotEmpty()) colorScheme.primary else colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -239,14 +240,14 @@ fun DrawerContent(
                             onValueChange = { searchQuery = it },
                             placeholder = {
                                 Text(
-                                    text = "Search services...",
+                                    text = stringResource(R.string.hint_search_services),
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Rounded.Search,
-                                    contentDescription = null,
+                                    contentDescription = stringResource(R.string.action_search),
                                     modifier = Modifier.size(20.dp),
                                     tint = colorScheme.onSurfaceVariant
                                 )
@@ -259,7 +260,7 @@ fun DrawerContent(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Rounded.Close,
-                                            contentDescription = "Clear",
+                                            contentDescription = stringResource(R.string.action_clear),
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -288,36 +289,30 @@ fun DrawerContent(
                             availableCategories.forEach { category ->
                                 val isSelected = category in selectedCategories
                                 FilterChip(
-                                    selected = isSelected,
-                                    onClick = {
-                                        selectedCategories = if (isSelected) {
-                                            selectedCategories - category
-                                        } else {
-                                            selectedCategories + category
-                                        }
-                                    },
-                                    label = {
-                                        Text(
-                                            text = category,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                        )
-                                    },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = colorScheme.primaryContainer,
-                                        selectedLabelColor = colorScheme.onPrimaryContainer
-                                    ),
-                                    border = FilterChipDefaults.filterChipBorder(
-                                        borderColor = colorScheme.outlineVariant,
-                                        selectedBorderColor = colorScheme.primary.copy(alpha = 0.3f),
-                                        enabled = true,
-                                        selected = isSelected
-                                    ),
-                                    shape = RoundedCornerShape(12.dp)
+                                    selected = isSelected, onClick = {
+                                    selectedCategories = if (isSelected) {
+                                        selectedCategories - category
+                                    } else {
+                                        selectedCategories + category
+                                    }
+                                }, label = {
+                                    Text(
+                                        text = category,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                    )
+                                }, colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = colorScheme.primaryContainer,
+                                    selectedLabelColor = colorScheme.onPrimaryContainer
+                                ), border = FilterChipDefaults.filterChipBorder(
+                                    borderColor = colorScheme.outlineVariant,
+                                    selectedBorderColor = colorScheme.primary.copy(alpha = 0.3f),
+                                    enabled = true,
+                                    selected = isSelected
+                                ), shape = RoundedCornerShape(12.dp)
                                 )
                             }
                         }
-
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
@@ -347,12 +342,12 @@ fun DrawerContent(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Star,
-                                    contentDescription = null,
+                                    contentDescription = stringResource(R.string.action_star),
                                     tint = Color(0xFFFFB300),
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(
-                                    text = "Favorites",
+                                    text = stringResource(R.string.tab_favorites),
                                     style = MaterialTheme.typography.labelLarge.copy(
                                         fontWeight = FontWeight.SemiBold
                                     ),
@@ -376,19 +371,21 @@ fun DrawerContent(
                                     } else {
                                         onServiceSelected(service)
                                     }
-                                }
+                                },
                             )
                         }
 
                         if (nonFavoriteFilteredServices.isNotEmpty()) {
                             item(key = "all_header") {
                                 Text(
-                                    text = "All Services",
+                                    text = stringResource(R.string.tab_all_services),
                                     style = MaterialTheme.typography.labelLarge.copy(
                                         fontWeight = FontWeight.SemiBold
                                     ),
                                     color = colorScheme.onSurface,
-                                    modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 2.dp)
+                                    modifier = Modifier.padding(
+                                        start = 4.dp, top = 8.dp, bottom = 2.dp
+                                    )
                                 )
                             }
                         }
@@ -409,8 +406,7 @@ fun DrawerContent(
                                 } else {
                                     onServiceSelected(service)
                                 }
-                            }
-                        )
+                            })
                     }
                 }
 
@@ -444,7 +440,7 @@ fun DrawerContent(
                         }
 
                         Text(
-                            text = "Update AI & services",
+                            text = stringResource(R.string.action_update_services),
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Medium
                             ),
@@ -462,26 +458,27 @@ fun DrawerContent(
                                     )
 
                                     val message: String
-                                    val showRestartAction: Boolean
+                                    var showRestartAction = true
 
                                     when {
                                         domainUpdated && aiUpdated -> {
-                                            message = "Domain rules & AI services updated"
-                                            showRestartAction = true
+                                            message =
+                                                context.getString(R.string.msg_update_all_success)
                                         }
 
                                         domainUpdated -> {
-                                            message = "Domain rules updated"
-                                            showRestartAction = true
+                                            message =
+                                                context.getString(R.string.msg_domain_update_success)
                                         }
 
                                         aiUpdated -> {
-                                            message = "AI services updated"
-                                            showRestartAction = true
+                                            message =
+                                                context.getString(R.string.msg_ai_update_success)
                                         }
 
                                         else -> {
-                                            message = "Already up to date"
+                                            message =
+                                                context.getString(R.string.msg_already_up_to_date)
                                             showRestartAction = false
                                         }
                                     }
@@ -489,7 +486,7 @@ fun DrawerContent(
                                     launch {
                                         snackbarHostState.showSnackbar(
                                             message = message,
-                                            actionLabel = if (showRestartAction) "Restart" else null,
+                                            actionLabel = if (showRestartAction) context.getString(R.string.action_restart) else null,
                                             withDismissAction = true,
                                             duration = SnackbarDuration.Long
                                         ).let { result ->
@@ -509,7 +506,8 @@ fun DrawerContent(
                                 } catch (_: Exception) {
                                     launch {
                                         snackbarHostState.showSnackbar(
-                                            message = "Update failed – check connection",
+                                            message = context.getString(R.string.msg_update_failed),
+                                            withDismissAction = true,
                                             duration = SnackbarDuration.Short
                                         )
                                     }
@@ -532,10 +530,13 @@ fun DrawerContent(
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text("Updating…", style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                text = stringResource(R.string.status_updating),
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         } else {
                             Text(
-                                "Update",
+                                text = stringResource(R.string.action_update),
                                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium)
                             )
                         }

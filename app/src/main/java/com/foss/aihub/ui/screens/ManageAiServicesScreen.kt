@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -21,6 +19,8 @@ import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.ArrowDropUp
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,10 +47,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.foss.aihub.R
 import com.foss.aihub.models.AiService
 import com.foss.aihub.utils.SettingsManager
 import com.foss.aihub.utils.aiServices
@@ -75,71 +76,21 @@ fun ManageAiServicesScreen(
 
     val filteredServices = orderedServices.filter {
         if (searchQuery.isEmpty()) true
-        else it.name.contains(
-            searchQuery, ignoreCase = true
-        )
+        else it.name.contains(searchQuery, ignoreCase = true)
     }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(), topBar = {
             if (isSearching) {
-                TopAppBar(
-                    title = {
-                    val focusRequester = remember { FocusRequester() }
-                    TextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .focusRequester(focusRequester),
-                        placeholder = { Text("Search AI services") },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Rounded.Clear, contentDescription = null)
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent,
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        )
-                    )
-                    LaunchedEffect(Unit) {
-                        focusRequester.requestFocus()
-                    }
-                }, navigationIcon = {
-                    IconButton(onClick = { isSearching = false; searchQuery = "" }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
-                    }
-                }, actions = {
-                    IconButton(onClick = { isSearching = true }) {
-                        Icon(Icons.Rounded.Search, contentDescription = null)
-                    }
-                }, colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-                )
+                SearchTopAppBar(
+                    searchQuery = searchQuery,
+                    onSearchQueryChange = { searchQuery = it },
+                    onCloseSearch = { isSearching = false; searchQuery = "" })
             } else {
-                TopAppBar(
-                    title = { Text("Manage AI Services") }, navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
-                    }
-                }, actions = {
-                    IconButton(onClick = { isSearching = true }) {
-                        Icon(Icons.Rounded.Search, contentDescription = null)
-                    }
-                }, colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-                )
+                RegularTopAppBar(
+                    title = stringResource(R.string.setting_manage_ai_services),
+                    onBack = onBack,
+                    onSearchClick = { isSearching = true })
             }
         }, containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
@@ -147,7 +98,7 @@ fun ManageAiServicesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             itemsIndexed(
@@ -162,7 +113,7 @@ fun ManageAiServicesScreen(
                 val isFirst = originalIndex == 0
                 val isLast = originalIndex == orderedServices.lastIndex
 
-                AiServiceItem(
+                AiServiceCard(
                     service = service,
                     isEnabled = isEnabled,
                     canToggle = canDisable,
@@ -194,38 +145,93 @@ fun ManageAiServicesScreen(
                         }
                     })
             }
-
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    tonalElevation = 0.5.dp
-                ) {
-                    Text(
-                        text = when {
-                            loadLastAiEnabled -> "At least one AI must remain enabled"
-                            else -> "At least one AI must be enabled • Default cannot be disabled"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AiServiceItem(
+private fun RegularTopAppBar(
+    title: String, onBack: () -> Unit, onSearchClick: () -> Unit
+) {
+    TopAppBar(
+        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = stringResource(R.string.action_back)
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = onSearchClick) {
+                Icon(
+                    Icons.Rounded.Search,
+                    contentDescription = stringResource(R.string.action_search)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface
+        )
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SearchTopAppBar(
+    searchQuery: String, onSearchQueryChange: (String) -> Unit, onCloseSearch: () -> Unit
+) {
+    val focusRequester = remember { FocusRequester() }
+    TopAppBar(
+        title = {
+        TextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
+            placeholder = { Text(stringResource(R.string.hint_search_services)) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { onSearchQueryChange("") }) {
+                        Icon(
+                            Icons.Rounded.Clear,
+                            contentDescription = stringResource(R.string.action_clear)
+                        )
+                    }
+                }
+            },
+            singleLine = true,
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+            )
+        )
+    }, navigationIcon = {
+        IconButton(onClick = onCloseSearch) {
+            Icon(
+                Icons.AutoMirrored.Rounded.ArrowBack,
+                contentDescription = stringResource(R.string.action_back)
+            )
+        }
+    }, colors = TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface
+    )
+    )
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+}
+
+@Composable
+private fun AiServiceCard(
     service: AiService,
     isEnabled: Boolean,
     canToggle: Boolean,
@@ -238,40 +244,37 @@ fun AiServiceItem(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit
 ) {
-    Surface(
+    Card(
         onClick = { if (canToggle || !isEnabled) onToggle(!isEnabled) },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = when {
-            isEnabled -> service.accentColor.copy(alpha = 0.08f)
-            else -> MaterialTheme.colorScheme.surfaceContainerLowest
-        },
-        border = when {
-            !isEnabled -> BorderStroke(
-                0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-            )
-
-            else -> null
-        },
-        tonalElevation = if (isEnabled) 1.dp else 0.dp
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                isEnabled -> service.accentColor.copy(alpha = 0.08f)
+                else -> MaterialTheme.colorScheme.surfaceContainerLowest
+            }
+        ),
+        border = if (!isEnabled) {
+            BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        } else null
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Column(
-                modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)
+                modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
                         text = service.name,
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = if (isEnabled) FontWeight.SemiBold else FontWeight.Medium,
                         color = if (isEnabled) MaterialTheme.colorScheme.onSurface
                         else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -281,39 +284,42 @@ fun AiServiceItem(
                     )
 
                     if (isDefault && !loadLastAiEnabled) {
-                        DefaultBadgeCompact()
+                        DefaultBadge()
                     }
                 }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Surface(
                         shape = MaterialTheme.shapes.small,
-                        color = service.accentColor.copy(alpha = if (isEnabled) 0.12f else 0.08f),
+                        color = service.accentColor.copy(alpha = if (isEnabled) 0.16f else 0.08f),
                         modifier = Modifier.wrapContentWidth()
                     ) {
                         Text(
                             text = service.category,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelMedium,
                             color = service.accentColor.copy(alpha = if (isEnabled) 0.9f else 0.6f),
                             fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
 
                     if (!canToggle && isEnabled) {
                         Text(
-                            text = if (isDefault && !loadLastAiEnabled) "• Default"
-                            else "• Last enabled",
-                            style = MaterialTheme.typography.labelSmall,
+                            text = if (isDefault && !loadLastAiEnabled) {
+                                "• ${stringResource(R.string.label_default_ai)}"
+                            } else {
+                                "• ${stringResource(R.string.label_last_enabled)}"
+                            },
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                         )
                     } else {
                         Text(
                             text = "• ${service.description}",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
                                 alpha = if (isEnabled) 0.7f else 0.5f
                             ),
@@ -325,7 +331,7 @@ fun AiServiceItem(
                 }
             }
 
-            TrailingControlsCompact(
+            TrailingControls(
                 isEnabled = isEnabled,
                 canToggle = canToggle,
                 isFirst = isFirst,
@@ -340,24 +346,24 @@ fun AiServiceItem(
 }
 
 @Composable
-private fun DefaultBadgeCompact() {
+private fun DefaultBadge() {
     Surface(
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier.wrapContentWidth()
     ) {
         Text(
-            "Default",
-            style = MaterialTheme.typography.labelSmall,
+            text = stringResource(R.string.label_default_ai),
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
         )
     }
 }
 
 @Composable
-private fun TrailingControlsCompact(
+private fun TrailingControls(
     isEnabled: Boolean,
     canToggle: Boolean,
     isFirst: Boolean,
@@ -369,7 +375,7 @@ private fun TrailingControlsCompact(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Switch(
             checked = isEnabled,
@@ -385,28 +391,28 @@ private fun TrailingControlsCompact(
         )
 
         if (showReorder) {
-            Column {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 IconButton(
-                    onClick = onMoveUp, enabled = !isFirst, modifier = Modifier.size(32.dp)
+                    onClick = onMoveUp, enabled = !isFirst, modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
                         Icons.Rounded.ArrowDropUp,
-                        contentDescription = "Move up",
+                        contentDescription = stringResource(R.string.action_move_up),
                         tint = if (!isFirst) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
                 IconButton(
-                    onClick = onMoveDown, enabled = !isLast, modifier = Modifier.size(32.dp)
+                    onClick = onMoveDown, enabled = !isLast, modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
                         Icons.Rounded.ArrowDropDown,
-                        contentDescription = "Move down",
+                        contentDescription = stringResource(R.string.action_move_down),
                         tint = if (!isLast) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }

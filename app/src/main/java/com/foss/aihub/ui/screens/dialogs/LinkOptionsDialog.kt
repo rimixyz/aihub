@@ -11,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
@@ -33,10 +32,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.foss.aihub.R
 import com.foss.aihub.models.LinkData
 import com.foss.aihub.models.LinkType
 
@@ -71,7 +72,7 @@ fun MD3LinkOptionsDialog(
 
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Link",
+                        text = stringResource(R.string.label_link),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
@@ -87,7 +88,7 @@ fun MD3LinkOptionsDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
+                            contentDescription = stringResource(R.string.action_close),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -152,7 +153,7 @@ fun MD3LinkOptionsDialog(
 
                         Icon(
                             imageVector = Icons.Default.ContentCopy,
-                            contentDescription = "Copy",
+                            contentDescription = stringResource(R.string.action_copy),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -163,7 +164,6 @@ fun MD3LinkOptionsDialog(
                     thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant
                 )
 
-
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -171,34 +171,24 @@ fun MD3LinkOptionsDialog(
                 ) {
                     LinkActionButton(
                         icon = Icons.AutoMirrored.Filled.OpenInNew,
-                        label = "Open in browser",
-                        description = "Open in external browser",
+                        label = stringResource(R.string.action_open_in_browser),
+                        description = stringResource(R.string.open_in_browser_description),
                         onClick = { onOpenLinkInExternalBrowser(linkData.url) })
 
                     LinkActionButton(
                         icon = Icons.Default.ContentCopy,
-                        label = "Copy link",
-                        description = "Copy to clipboard",
+                        label = stringResource(R.string.action_copy_link),
+                        description = stringResource(R.string.copy_link_description),
                         onClick = onCopyLink
                     )
 
                     LinkActionButton(
                         icon = Icons.Default.Share,
-                        label = "Share link",
-                        description = "Share via other apps",
+                        label = stringResource(R.string.action_share_link),
+                        description = stringResource(R.string.share_link_description),
                         onClick = onShareLink
                     )
-
-                    if (linkData.type == LinkType.IMAGE) {
-                        LinkActionButton(
-                            icon = Icons.Default.Download,
-                            label = "Download image",
-                            description = "Save to device",
-                            onClick = onShareLink
-                        )
-                    }
                 }
-
 
                 OutlinedButton(
                     onClick = onDismiss,
@@ -208,7 +198,7 @@ fun MD3LinkOptionsDialog(
                     shape = MaterialTheme.shapes.large
                 ) {
                     Text(
-                        text = "Cancel",
+                        text = stringResource(R.string.action_cancel),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -241,7 +231,6 @@ private fun LinkActionButton(
             Icon(
                 imageVector = icon, contentDescription = null, modifier = Modifier.size(22.dp)
             )
-
             Column(
                 modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
