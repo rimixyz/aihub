@@ -1,6 +1,7 @@
 package com.foss.aihub.ui.webview
 
 import android.graphics.Bitmap
+import android.text.Html.escapeHtml
 import android.util.Log
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -8,12 +9,13 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.foss.aihub.MainActivity
+import com.foss.aihub.R
 import com.foss.aihub.models.AiService
-import com.foss.aihub.utils.buildBlockedPage
 import com.foss.aihub.utils.readAssetsFile
 import java.io.ByteArrayInputStream
 
-class ProgressTrackingWebViewClient(
+
+class CustomWebViewClient(
     val context: MainActivity,
     private val onProgressUpdate: (Int) -> Unit,
     private val onLoadingStateChange: (Boolean) -> Unit,
@@ -82,10 +84,22 @@ class ProgressTrackingWebViewClient(
         val url = request?.url?.toString() ?: return null
         if (!WebViewSecurity.allowConnectivityForService(service.id, url)) {
             Log.d("AI_HUB", "🚫 Blocked for ${service.name}: $url")
+            var html = context.readAssetsFile("blockedPage.txt")
+
+            html = html.replace("{{BLOCKED_TITLE}}", context.getString(R.string.label_page_blocked))
+            html = html.replace(
+                "{{BLOCKED_DESCRIPTION}}", context.getString(R.string.msg_page_blocked_description)
+            )
+            html =
+                html.replace("{{LABEL_BLOCKED_URL}}", context.getString(R.string.label_blocked_url))
+            html = html.replace("{{BLOCKED_URL}}", escapeHtml(url))
+            html = html.replace("{{LABEL_SERVICE}}", context.getString(R.string.label_service))
+            html = html.replace("{{SERVICE_NAME}}", service.name)
+            html = html.replace("{{COPY_BUTTON_TEXT}}", context.getString(R.string.action_copy))
+            html = html.replace("{{FOOTER_TEXT}}", context.getString(R.string.msg_copy_description))
+
             return WebResourceResponse(
-                "text/html",
-                "UTF-8",
-                ByteArrayInputStream(buildBlockedPage(context, url, service).toByteArray())
+                "text/html", "UTF-8", ByteArrayInputStream(html.toByteArray())
             )
         }
         return null
@@ -107,14 +121,14 @@ class ProgressTrackingWebViewClient(
     }
 
     private fun injectBlobInterceptor(view: WebView) {
-        val script = context.readAssetsFile("blobDownloadInterceptor.js").trimIndent()
+        val script = context.readAssetsFile("blobDownloadInterceptor.txt").trimIndent()
         view.evaluateJavascript(script) { result ->
             Log.d("WebView", "Blob interceptor injection result: $result")
         }
     }
 
     private fun injectShareInterceptor(view: WebView) {
-        val script = context.readAssetsFile("webSharePolyfill.js").trimIndent()
+        val script = context.readAssetsFile("webSharePolyfill.txt").trimIndent()
         view.evaluateJavascript(script) { result ->
             Log.d("WebView", "Share injection result: $result")
         }

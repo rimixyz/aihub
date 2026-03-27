@@ -33,7 +33,7 @@ object DownloadHandler {
         when {
             url.startsWith("blob:") -> {
                 val script =
-                    webView.context.readAssetsFile("forceDownload.js").replace("<url>", url)
+                    webView.context.readAssetsFile("forceDownload.txt").replace("{{URL}}", url)
                         .trimIndent()
 
                 webView.evaluateJavascript(script) { result ->

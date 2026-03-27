@@ -44,7 +44,7 @@ import com.foss.aihub.models.LinkType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MD3LinkOptionsDialog(
+fun LinkOptionsDialog(
     linkData: LinkData,
     onDismiss: () -> Unit,
     onOpenLinkInExternalBrowser: (String) -> Unit,

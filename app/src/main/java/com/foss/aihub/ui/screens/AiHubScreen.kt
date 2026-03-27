@@ -1,9 +1,9 @@
 package com.foss.aihub.ui.screens
 
-import android.annotation.SuppressLint
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.JsResult
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.Toast
@@ -39,12 +39,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.foss.aihub.MainActivity
 import com.foss.aihub.R
 import com.foss.aihub.models.LinkData
@@ -55,7 +55,8 @@ import com.foss.aihub.ui.components.DrawerContent
 import com.foss.aihub.ui.components.ErrorOverlay
 import com.foss.aihub.ui.components.ErrorType
 import com.foss.aihub.ui.components.LoadingOverlay
-import com.foss.aihub.ui.screens.dialogs.MD3LinkOptionsDialog
+import com.foss.aihub.ui.screens.dialogs.CustomAlertDialog
+import com.foss.aihub.ui.screens.dialogs.LinkOptionsDialog
 import com.foss.aihub.ui.webview.createWebViewForService
 import com.foss.aihub.ui.webview.updateWebViewSettings
 import com.foss.aihub.utils.aiServices
@@ -64,18 +65,16 @@ import com.foss.aihub.utils.openInExternalBrowser
 import com.foss.aihub.utils.shareLink
 import kotlinx.coroutines.launch
 
-@SuppressLint("LocalContextGetResourceValueCall", "UnrememberedMutableState")
 @Composable
-fun AiHubApp(activity: MainActivity) {
-    val context = LocalContext.current
-    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+fun AiHubApp(context: MainActivity) {
+    val lifecycleOwner = LocalLifecycleOwner.current
     val configuration = LocalConfiguration.current
 
     val snackbarHostState = remember { SnackbarHostState() }
     val drawerState = rememberDrawerState(initialValue = Closed)
     val scope = rememberCoroutineScope()
 
-    val settingsManager = remember { activity.settingsManager }
+    val settingsManager = remember { context.settingsManager }
     val settings by settingsManager.settingsFlow.collectAsState()
 
     val initialId = if (settings.loadLastOpenedAI) {
@@ -105,12 +104,19 @@ fun AiHubApp(activity: MainActivity) {
     val loadedServices = remember { mutableStateSetOf<String>() }
     val serviceAccessOrder = remember { mutableListOf<String>() }
 
-    val currentState by derivedStateOf {
-        serviceStates[selectedService.id] ?: ServiceUiState()
+    var jsMessage by remember { mutableStateOf<String?>(null) }
+    var jsResult by remember { mutableStateOf<JsResult?>(null) }
+
+    val currentState by remember {
+        derivedStateOf {
+            serviceStates[selectedService.id] ?: ServiceUiState()
+        }
     }
 
-    val hasCurrentError by derivedStateOf {
-        currentState.error?.let { ErrorType.shouldShowOverlay(it.first) } == true
+    val hasCurrentError by remember {
+        derivedStateOf {
+            currentState.error?.let { ErrorType.shouldShowOverlay(it.first) } == true
+        }
     }
 
     fun updateServiceState(serviceId: String, update: (ServiceUiState) -> ServiceUiState) {
@@ -224,8 +230,10 @@ fun AiHubApp(activity: MainActivity) {
     }
 
     ModalNavigationDrawer(
-        drawerState = drawerState, gesturesEnabled = drawerState.isOpen, drawerContent = {
+        drawerState = drawerState, gesturesEnabled = drawerState.isOpen,
+        drawerContent = {
             DrawerContent(
+                context = context,
                 selectedService = selectedService,
                 onServiceSelected = { service ->
                     selectedService = service
@@ -259,7 +267,8 @@ fun AiHubApp(activity: MainActivity) {
                 },
                 snackbarHostState = snackbarHostState
             )
-        }) {
+        },
+    ) {
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
@@ -400,9 +409,9 @@ fun AiHubApp(activity: MainActivity) {
                             val currentWebView = webViews[currentService.id]
                             if (currentWebView == null) {
                                 val newWebView = createWebViewForService(
-                                    context = context,
+                                    context = this.context,
                                     service = currentService,
-                                    activity = activity,
+                                    activity = context,
                                     settings = settings,
                                     onProgressUpdate = { progress ->
                                         updateServiceState(currentService.id) { state ->
@@ -436,6 +445,10 @@ fun AiHubApp(activity: MainActivity) {
                                             )
                                         }
                                         webViews[currentService.id]?.visibility = View.GONE
+                                    },
+                                    onJsAlertRequest = { message, result ->
+                                        jsMessage = message
+                                        jsResult = result
                                     })
 
                                 updateWebViewSettings(newWebView, settings, false)
@@ -475,7 +488,7 @@ fun AiHubApp(activity: MainActivity) {
                             val newWebView = createWebViewForService(
                                 context = root.context,
                                 service = currentService,
-                                activity = activity,
+                                activity = context,
                                 settings = settings,
                                 onProgressUpdate = { progress ->
                                     updateServiceState(currentService.id) { state ->
@@ -509,6 +522,10 @@ fun AiHubApp(activity: MainActivity) {
                                         )
                                     }
                                     webViews[currentService.id]?.visibility = View.GONE
+                                },
+                                onJsAlertRequest = { message, result ->
+                                    jsMessage = message
+                                    jsResult = result
                                 })
 
                             updateWebViewSettings(newWebView, settings, false)
@@ -609,7 +626,7 @@ fun AiHubApp(activity: MainActivity) {
             else -> {
                 val currentTime = System.currentTimeMillis()
                 if (currentTime - backPressedTime < 2000L) {
-                    activity.finish()
+                    context.finish()
                 } else {
                     backPressedTime = currentTime
                     Toast.makeText(
@@ -622,7 +639,7 @@ fun AiHubApp(activity: MainActivity) {
 
     if (showLinkDialog) {
         selectedLink?.let { linkData ->
-            MD3LinkOptionsDialog(
+            LinkOptionsDialog(
                 linkData = linkData,
                 onDismiss = { showLinkDialog = false },
                 onOpenLinkInExternalBrowser = { url ->
@@ -735,6 +752,14 @@ fun AiHubApp(activity: MainActivity) {
         }
     }
 
+    if (jsMessage != null) {
+        BackHandler {
+            jsResult?.cancel()
+            jsMessage = null
+        }
+        CustomAlertDialog(context, jsMessage, jsResult, onDismiss = { jsMessage = null })
+    }
+
     if (showSettingsScreen) {
         BackHandler {
             showSettingsScreen = false
@@ -826,6 +851,6 @@ fun AiHubApp(activity: MainActivity) {
 
     if (showAbout) {
         BackHandler { showAbout = false }
-        AboutScreen(onBack = { showAbout = false })
+        AboutScreen(context, onBack = { showAbout = false })
     }
 }

@@ -41,7 +41,7 @@ import com.foss.aihub.models.AiService
 import com.foss.aihub.models.WebViewState
 
 @Composable
-fun Md3ServiceCard(
+fun ServiceCard (
     service: AiService,
     serviceColor: Color,
     isSelected: Boolean,

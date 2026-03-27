@@ -1,8 +1,7 @@
 package com.foss.aihub.ui.screens
 
-import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -59,7 +58,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -72,12 +70,10 @@ import com.foss.aihub.utils.GITHUB_REPO_NAME
 import com.foss.aihub.utils.GITHUB_USER_NAME
 import java.time.Year
 
-@SuppressLint("LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutScreen(onBack: () -> Unit) {
+fun AboutScreen(context: Context, onBack: () -> Unit) {
     val uriHandler = LocalUriHandler.current
-    val context = LocalContext.current
 
     val githubUrl = "https://github.com/$GITHUB_USER_NAME"
     val repoUrl = "$githubUrl/$GITHUB_REPO_NAME"
@@ -308,14 +304,12 @@ fun AboutScreen(onBack: () -> Unit) {
                                 .clickable { uriHandler.openUri(githubUrl) }
                                 .padding(horizontal = 24.dp, vertical = 10.dp))
 
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            Spacer(Modifier.height(16.dp))
-                            Text(
-                                text = "© ${Year.now().value} ${stringResource(R.string.app_author)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                            )
-                        }
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            text = "© ${Year.now().value} ${stringResource(R.string.app_author)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        )
                     }
                 }
             }

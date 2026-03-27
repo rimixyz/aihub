@@ -56,7 +56,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -78,7 +77,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -160,7 +158,8 @@ fun AiHubAppBar(
                         )
                     }
                 }
-            },) {
+            },
+        ) {
             IconButton(
                 onClick = { showServicesDialog = true },
                 modifier = Modifier
@@ -519,31 +518,6 @@ private fun ActiveServiceDialogItem(
             }
         }
     }
-}
-
-@Composable
-private fun ExpressiveDropdownMenuItem(
-    icon: ImageVector, text: String, onClick: () -> Unit
-) {
-    DropdownMenuItem(
-        text = {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium
-        )
-    }, leadingIcon = {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
-        )
-    }, onClick = onClick, colors = MenuDefaults.itemColors(
-        leadingIconColor = MaterialTheme.colorScheme.primary,
-        textColor = MaterialTheme.colorScheme.onSurface
-    )
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

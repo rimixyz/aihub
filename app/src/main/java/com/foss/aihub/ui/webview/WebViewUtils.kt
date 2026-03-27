@@ -7,6 +7,7 @@ import android.os.Build
 import android.util.Log
 import android.view.View
 import android.webkit.CookieManager
+import android.webkit.JsResult
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.FrameLayout
@@ -21,7 +22,6 @@ import com.foss.aihub.utils.USER_AGENT_MOBILE
 import com.foss.aihub.utils.cleanTrackingParams
 import com.foss.aihub.utils.extractLinkTitle
 
-@SuppressLint("SetJavaScriptEnabled")
 fun createWebViewForService(
     context: Context,
     service: AiService,
@@ -30,7 +30,8 @@ fun createWebViewForService(
     onProgressUpdate: (Int) -> Unit,
     onLoadingStateChange: (Boolean) -> Unit,
     onLinkLongPress: (String, String, LinkType) -> Unit,
-    onError: (Int, String) -> Unit
+    onError: (Int, String) -> Unit,
+    onJsAlertRequest: (String?, JsResult?) -> Unit
 ): WebView {
     return WebView(context).apply {
         addJavascriptInterface(BlobDownloadInterface(context), "AndroidBlobHandler")
@@ -43,7 +44,7 @@ fun createWebViewForService(
         layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
         )
-        webViewClient = ProgressTrackingWebViewClient(
+        webViewClient = CustomWebViewClient(
             context = activity,
             onProgressUpdate = onProgressUpdate,
             onLoadingStateChange = onLoadingStateChange,
@@ -51,8 +52,11 @@ fun createWebViewForService(
             onError = onError
         )
 
-        webChromeClient = ProgressTrackingWebChromeClient(
-            onProgressUpdate = onProgressUpdate, activity = activity, mainWebView = this
+        webChromeClient = CustomWebChromeClient(
+            context = activity,
+            onProgressUpdate = onProgressUpdate,
+            onJsAlertRequest = onJsAlertRequest,
+            mainWebView = this,
         )
 
         setOnLongClickListener { view ->

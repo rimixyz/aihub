@@ -1,6 +1,6 @@
 package com.foss.aihub.ui.components
 
-import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -64,7 +64,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -78,10 +77,10 @@ import com.foss.aihub.utils.aiServices
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
-@SuppressLint("UnrememberedMutableState", "LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DrawerContent(
+    context: Context,
     modifier: Modifier = Modifier,
     selectedService: AiService,
     onServiceSelected: (AiService) -> Unit,
@@ -93,7 +92,6 @@ fun DrawerContent(
     onToggleFavorite: (String) -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
-    val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
     var isUpdatingDomainRules by remember { mutableStateOf(false) }
@@ -106,17 +104,21 @@ fun DrawerContent(
             .mapNotNull { id -> aiServices.find { it.id == id } }
     }
 
-    val availableCategories by derivedStateOf {
-        orderedEnabledServices.map { it.category }.distinct().sorted()
+    val availableCategories by remember {
+        derivedStateOf {
+            orderedEnabledServices.map { it.category }.distinct().sorted()
+        }
     }
 
-    val filteredServices by derivedStateOf {
-        orderedEnabledServices.filter { service ->
-            val matchesSearch =
-                searchQuery.isBlank() || service.name.contains(searchQuery, ignoreCase = true)
-            val matchesCategory =
-                selectedCategories.isEmpty() || service.category in selectedCategories
-            matchesSearch && matchesCategory
+    val filteredServices by remember {
+        derivedStateOf {
+            orderedEnabledServices.filter { service ->
+                val matchesSearch =
+                    searchQuery.isBlank() || service.name.contains(searchQuery, ignoreCase = true)
+                val matchesCategory =
+                    selectedCategories.isEmpty() || service.category in selectedCategories
+                matchesSearch && matchesCategory
+            }
         }
     }
 
@@ -317,12 +319,16 @@ fun DrawerContent(
                     }
                 }
 
-                val favoriteFilteredServices by derivedStateOf {
-                    filteredServices.filter { it.id in favoriteServices }
+                val favoriteFilteredServices by remember {
+                    derivedStateOf {
+                        filteredServices.filter { it.id in favoriteServices }
+                    }
                 }
 
-                val nonFavoriteFilteredServices by derivedStateOf {
-                    filteredServices.filter { it.id !in favoriteServices }
+                val nonFavoriteFilteredServices by remember {
+                    derivedStateOf {
+                        filteredServices.filter { it.id !in favoriteServices }
+                    }
                 }
 
                 LazyColumn(
@@ -358,7 +364,7 @@ fun DrawerContent(
 
                         items(favoriteFilteredServices, key = { "fav_${it.id}" }) { service ->
                             val state = webViewStates[service.id] ?: WebViewState.IDLE
-                            Md3ServiceCard(
+                            ServiceCard(
                                 service = service,
                                 serviceColor = service.accentColor,
                                 isSelected = selectedService.id == service.id,
@@ -393,7 +399,7 @@ fun DrawerContent(
 
                     items(nonFavoriteFilteredServices, key = { it.id }) { service ->
                         val state = webViewStates[service.id] ?: WebViewState.IDLE
-                        Md3ServiceCard(
+                        ServiceCard(
                             service = service,
                             serviceColor = service.accentColor,
                             isSelected = selectedService.id == service.id,
